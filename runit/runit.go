@@ -72,16 +72,16 @@ func (s *service) file(file string) string {
 	return fmt.Sprintf("%s/%s/supervise/%s", s.ServiceDir, s.Name, file)
 }
 
-func (s *service) runsvRunning() bool {
+func (s *service) runsvRunning() (bool, error) {
 	file, err := os.OpenFile(s.file("ok"), os.O_WRONLY, 0)
-	defer file.Close()
-	if err == nil {
-		return true
+	if err != nil {
+		if err == syscall.ENXIO {
+			return false, nil
+		}
+		return false, err
 	}
-	if err == syscall.ENXIO {
-		return false
-	}
-	panic(err)
+	file.Close()
+	return true, nil
 }
 
 func (s *service) status() ([]byte, error) {
@@ -101,7 +101,12 @@ func (s *service) NormallyUp() bool {
 }
 
 func (s *service) Status() (*SvStatus, error) {
-	if !s.runsvRunning() {
+	running, err := s.runsvRunning()
+	if err != nil {
+		return nil, err
+	}
+
+	if !running {
 		return nil, ENoRunsv
 	}
 
