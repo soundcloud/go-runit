@@ -86,10 +86,10 @@ func (s *service) runsvRunning() (bool, error) {
 
 func (s *service) status() ([]byte, error) {
 	file, err := os.Open(s.file("status"))
-	defer file.Close()
 	if err != nil {
 		return nil, err
 	}
+	defer file.Close()
 	status := make([]byte, statusLen)
 	_, err = file.Read(status)
 	return status, err
@@ -101,15 +101,6 @@ func (s *service) NormallyUp() bool {
 }
 
 func (s *service) Status() (*SvStatus, error) {
-	running, err := s.runsvRunning()
-	if err != nil {
-		return nil, err
-	}
-
-	if !running {
-		return nil, ENoRunsv
-	}
-
 	status, err := s.status()
 	if err != nil {
 		return nil, err
