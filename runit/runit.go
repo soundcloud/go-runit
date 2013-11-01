@@ -6,12 +6,14 @@ import (
 	"io/ioutil"
 	"os"
 	"syscall"
+	"time"
 )
 
 const (
-	serviceDir = "/etc/service"
-	taiOffset  = 4611686018427387914
-	statusLen  = 20
+	defaultServiceDir = "/etc/service"
+
+	taiOffset = 4611686018427387914
+	statusLen = 20
 
 	posTimeStart = 0
 	posTimeEnd   = 7
@@ -38,6 +40,7 @@ var (
 type SvStatus struct {
 	Pid        int
 	Duration   int
+	Timestamp  time.Time
 	State      int
 	NormallyUp bool
 	Want       int
@@ -48,23 +51,28 @@ type service struct {
 	ServiceDir string
 }
 
-func GetServices() ([]*service, error) {
-	files, err := ioutil.ReadDir(serviceDir)
+func GetServices(dir string) ([]*service, error) {
+	if dir == "" {
+		dir = defaultServiceDir
+	}
+	files, err := ioutil.ReadDir(dir)
 	if err != nil {
 		return nil, err
 	}
 	services := []*service{}
 	for _, file := range files {
-		if file.IsDir() {
-			continue
+		if file.Mode() == os.ModeSymlink || file.IsDir() {
+			services = append(services, GetService(file.Name(), dir))
 		}
-		services = append(services, GetService(file.Name()))
 	}
 	return services, nil
 }
 
-func GetService(name string) *service {
-	r := service{Name: name, ServiceDir: serviceDir}
+func GetService(name string, dir string) *service {
+	if dir == "" {
+		dir = defaultServiceDir
+	}
+	r := service{Name: name, ServiceDir: dir}
 	return &r
 }
 
@@ -126,6 +134,7 @@ func (s *service) Status() (*SvStatus, error) {
 	}
 	sS := SvStatus{
 		Pid:        pid,
+		Timestamp:  time.Unix(tai-taiOffset, 0), // FIXME: do we just select the wrong slice?
 		Duration:   int(tv.Sec - (tai - taiOffset)),
 		State:      int(state),
 		NormallyUp: s.NormallyUp(),
