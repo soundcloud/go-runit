@@ -135,7 +135,7 @@ func (s *service) Status() (*SvStatus, error) {
 	sS := SvStatus{
 		Pid:        pid,
 		Timestamp:  time.Unix(tai-taiOffset, 0), // FIXME: do we just select the wrong slice?
-		Duration:   int(tv.Sec - (tai - taiOffset)),
+		Duration:   int(int64(tv.Sec) - (tai - taiOffset)),
 		State:      int(state),
 		NormallyUp: s.NormallyUp(),
 	}
