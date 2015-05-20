@@ -61,7 +61,7 @@ func GetServices(dir string) ([]*service, error) {
 	}
 	services := []*service{}
 	for _, file := range files {
-		if file.Mode() == os.ModeSymlink || file.IsDir() {
+		if file.Mode()&os.ModeSymlink == os.ModeSymlink || file.IsDir() {
 			services = append(services, GetService(file.Name(), dir))
 		}
 	}

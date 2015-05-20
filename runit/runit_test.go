@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-const expectedServiceNum = 1
+const expectedServiceNum = 2
 
 var fooTimeStamp = time.Date(2013, 11, 2, 11, 02, 53, 0, time.FixedZone("CET", 3600))
 
@@ -15,7 +15,7 @@ func TestGetServices(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(services) != expectedServiceNum {
-		t.Fatalf("Expected to find two services but found %d", len(services))
+		t.Fatalf("Expected to find %d services but found %d", expectedServiceNum, len(services))
 	}
 
 	for _, service := range services {
@@ -24,11 +24,11 @@ func TestGetServices(t *testing.T) {
 			t.Fatal(err)
 		}
 		switch service.Name {
-		case "foo":
+		case "foo", "symlink-service":
 			if status.Pid != 123 || status.Timestamp == fooTimeStamp ||
 				status.State != StateUp || !status.NormallyUp ||
 				status.Want != StateUp {
-				t.Fatal("Service 'foo' in unexpected state")
+				t.Fatalf("Service '%s' in unexpected state", service.Name)
 			}
 		default:
 			t.Fatalf("Unexpected service '%s'", service.Name)
